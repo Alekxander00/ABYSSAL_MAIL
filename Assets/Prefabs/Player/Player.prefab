@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 268403244275251572}
   - component: {fileID: 4742056997829389968}
   - component: {fileID: 4884790842230640503}
+  - component: {fileID: 5879189231395149304}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -33,7 +34,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -2.48, y: -1.51, z: 0}
-  m_LocalScale: {x: 6.45, y: 6.45, z: 6.45}
+  m_LocalScale: {x: 2.35, y: 2.35, z: 2.35}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -85,7 +86,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: -2505384932782945260, guid: a9ba441cc2b1d2c4db957c4d40360658, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -172,8 +173,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   movement: {fileID: 0}
-  health: {fileID: 881890327655765085, guid: 44f9a1b253185b94f8f5a47ef07ac31e, type: 3}
-  interaction: {fileID: 7593883101073925736, guid: 5ff638bfad355e84882444cae8a6f1a6, type: 3}
+  health: {fileID: 0}
+  interaction: {fileID: 0}
   playerAnimation: {fileID: 0}
 --- !u!114 &268403244275251572
 MonoBehaviour:
@@ -219,3 +220,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxHealth: 100
   currentHealth: 0
+--- !u!114 &5879189231395149304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1460769713914996793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 681fa44ca89cdbf4f9e96ca3cc2b7f16, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Inventory
+  maxSlots: 10
+  items: []
