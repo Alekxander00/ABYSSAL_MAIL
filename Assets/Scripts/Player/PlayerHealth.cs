@@ -11,9 +11,12 @@ public class PlayerHealth : MonoBehaviour
     public event Action<float> OnHealthChanged;
     public event Action OnPlayerDeath;
 
+    private Animator animator;
+
     private void Start()
     {
         currentHealth = maxHealth;
+        animator = GetComponent<Animator>();
     }
 
     public void TakeDamage(float damage)
@@ -45,6 +48,12 @@ public class PlayerHealth : MonoBehaviour
 
         // Aquí manejarías la muerte del jugador
         Debug.Log("Player died!");
+
+        if (animator != null)
+        {
+            animator.SetBool("isMoving", false);
+            animator.enabled = false; //por completo el animator
+        }
 
         // Temporal: reiniciar escena
         // UnityEngine.SceneManagement.SceneManager.LoadScene(0);
