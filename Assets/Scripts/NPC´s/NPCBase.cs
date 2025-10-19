@@ -22,14 +22,27 @@ public class NPCBase : Interactable
     public ParticleSystem deliveryEffect;
     public AudioClip deliverySound;
 
+    [Header("Debug")]
+    public bool enableDebug = true;
+
     private Mission myMission;
     private bool isProcessing = false;
+    private Coroutine currentDialogueCoroutine;
 
     public override void Interact(GameObject player)
     {
-        if (!CanInteract() || isProcessing) return;
+        if (!CanInteract() || isProcessing)
+        {
+            if (enableDebug) Debug.Log($"⏳ {npcName}: No se puede interactuar (procesando: {isProcessing})");
+            return;
+        }
+
+        if (enableDebug) Debug.Log($"🎮 {npcName}: Iniciando interacción");
 
         isProcessing = true;
+
+        // ✅ CORRECCIÓN: Ocultar diálogo anterior antes de mostrar uno nuevo
+        HideDialogueBubble();
 
         FindMyMission();
 
@@ -52,6 +65,7 @@ public class NPCBase : Interactable
     {
         yield return new WaitForSeconds(0.5f);
         isProcessing = false;
+        if (enableDebug) Debug.Log($"🔄 {npcName}: Procesamiento reiniciado");
     }
 
     private void FindMyMission()
@@ -59,13 +73,19 @@ public class NPCBase : Interactable
         if (myMission == null && GameManager.Instance != null && GameManager.Instance.IsReady())
         {
             myMission = GameManager.Instance.GetMissionForNPC(npcName);
+            if (enableDebug && myMission != null)
+                Debug.Log($"🔍 {npcName}: Misión encontrada - {myMission.missionName}");
         }
     }
 
     private void HandleMissionInteraction()
     {
         GameManager gameManager = GameManager.Instance;
-        if (gameManager == null) return;
+        if (gameManager == null)
+        {
+            if (enableDebug) Debug.LogError("❌ GameManager no encontrado");
+            return;
+        }
 
         if (gameManager.activeMissions.Contains(myMission))
         {
@@ -104,7 +124,7 @@ public class NPCBase : Interactable
 
         string completionDialogue = GetRandomDialogue(completionDialogues);
         ShowDialogueBubble(completionDialogue);
-        Debug.Log($"🎉 {npcName}: ¡Entrega completada!");
+        if (enableDebug) Debug.Log($"🎉 {npcName}: ¡Entrega completada!");
 
         PlayDeliveryEffects();
 
@@ -116,14 +136,14 @@ public class NPCBase : Interactable
     {
         string dialogue = GetRandomDialogue(greetingDialogues);
         ShowDialogueBubble(dialogue);
-        Debug.Log($"{npcName}: {dialogue}");
+        if (enableDebug) Debug.Log($"{npcName}: {dialogue}");
     }
 
     private void ShowDeliveryDialogue()
     {
         string dialogue = GetRandomDialogue(deliveryDialogues);
         ShowDialogueBubble(dialogue);
-        Debug.Log($"{npcName}: {dialogue}");
+        if (enableDebug) Debug.Log($"{npcName}: {dialogue}");
     }
 
     private void ShowCompletionDialogue()
@@ -145,33 +165,31 @@ public class NPCBase : Interactable
         {
             AudioSource.PlayClipAtPoint(deliverySound, transform.position);
         }
-
-        // Efectos específicos por NPC
-        switch (npcName.ToLower())
-        {
-            case "pez globo":
-                // Efectos románticos
-                break;
-            case "cangrejo robot":
-                // Efectos mecánicos
-                break;
-            case "pulpo sabio":
-                // Efectos de sabiduría
-                break;
-            case "mantarraya":
-                // Efectos de aventura
-                break;
-        }
     }
 
+    // ✅ CORRECCIÓN CRÍTICA: Sistema de diálogos mejorado
     private void ShowDialogueBubble(string text)
     {
-        if (dialogueBubble != null && dialogueText != null)
+        if (dialogueBubble == null || dialogueText == null)
         {
-            dialogueText.text = text;
-            dialogueBubble.SetActive(true);
-            StartCoroutine(HideDialogueAfterDelay());
+            if (enableDebug) Debug.LogError($"❌ {npcName}: dialogueBubble o dialogueText no asignados en el Inspector");
+            return;
         }
+
+        // Cancelar diálogo anterior si existe
+        if (currentDialogueCoroutine != null)
+        {
+            StopCoroutine(currentDialogueCoroutine);
+            currentDialogueCoroutine = null;
+        }
+
+        // Mostrar nuevo diálogo
+        dialogueText.text = text;
+        dialogueBubble.SetActive(true);
+        if (enableDebug) Debug.Log($"💬 {npcName}: Mostrando diálogo - {text}");
+
+        // Iniciar temporizador para ocultar
+        currentDialogueCoroutine = StartCoroutine(HideDialogueAfterDelay());
     }
 
     private IEnumerator HideDialogueAfterDelay()
@@ -180,11 +198,19 @@ public class NPCBase : Interactable
         HideDialogueBubble();
     }
 
-    private void HideDialogueBubble()
+    // ✅ NUEVO: Método público para ocultar diálogo desde otros scripts
+    public void HideDialogueBubble()
     {
         if (dialogueBubble != null)
         {
             dialogueBubble.SetActive(false);
+            if (enableDebug) Debug.Log($"🔇 {npcName}: Diálogo ocultado");
+        }
+
+        if (currentDialogueCoroutine != null)
+        {
+            StopCoroutine(currentDialogueCoroutine);
+            currentDialogueCoroutine = null;
         }
     }
 
@@ -199,6 +225,24 @@ public class NPCBase : Interactable
     public override bool CanInteract()
     {
         return true;
+    }
+
+    // ✅ NUEVO: Para debug en tiempo real
+    private void Update()
+    {
+        // Ocultar diálogo si el jugador se aleja (opcional)
+        if (dialogueBubble != null && dialogueBubble.activeSelf)
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+            {
+                float distance = Vector2.Distance(transform.position, player.transform.position);
+                if (distance > 5f) // Si el jugador está muy lejos
+                {
+                    HideDialogueBubble();
+                }
+            }
+        }
     }
 
     [ContextMenu("Test Delivery")]
@@ -246,5 +290,11 @@ public class NPCBase : Interactable
         {
             Debug.LogWarning($"❌ No se encontró misión para {npcName}");
         }
+    }
+
+    [ContextMenu("Test Dialogue")]
+    public void TestDialogue()
+    {
+        ShowDialogueBubble("Este es un diálogo de prueba");
     }
 }
