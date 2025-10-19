@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: a9ba441cc2b1d2c4db957c4d40360658
+guid: eea23d6e190560a44b295a71ce4b8883
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2505384932782945260
-    second: ajolote1_0
+      213: -4505951651700657338
+    second: ajolote2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ajolote1_0
+      name: ajolote2_0
       rect:
         serializedVersion: 2
-        x: 33
-        y: 11
-        width: 119
-        height: 40
+        x: 32
+        y: 9
+        width: 120
+        height: 42
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 41c4bdf7da51b3dd0800000000000000
-      internalID: -2505384932782945260
+      spriteID: 6433c49a8d4a771c0800000000000000
+      internalID: -4505951651700657338
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      ajolote1_0: -2505384932782945260
+      ajolote2_0: -4505951651700657338
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

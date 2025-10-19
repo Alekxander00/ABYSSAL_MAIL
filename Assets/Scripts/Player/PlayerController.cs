@@ -6,7 +6,6 @@ public class PlayerController : MonoBehaviour
     public  PlayerMovement movement;
     public PlayerHealth health;
     public PlayerInteraction interaction;
-    public PlayerAnimation playerAnimation;
 
     private void Awake()
     {
@@ -14,13 +13,11 @@ public class PlayerController : MonoBehaviour
         if (movement == null) movement = GetComponent<PlayerMovement>();
         if (health == null) health = GetComponent<PlayerHealth>();
         if (interaction == null) interaction = GetComponent<PlayerInteraction>();
-        if (playerAnimation == null) playerAnimation = GetComponent<PlayerAnimation>();
 
         // Verificar que todos los componentes están presentes
         if (movement == null) Debug.LogError("PlayerMovement no encontrado en " + gameObject.name);
         if (health == null) Debug.LogError("PlayerHealth no encontrado en " + gameObject.name);
         if (interaction == null) Debug.LogError("PlayerInteraction no encontrado en " + gameObject.name);
-        if (playerAnimation == null) Debug.LogError("PlayerAnimation no encontrado en " + gameObject.name);
 
         InitializePlayer();
     }

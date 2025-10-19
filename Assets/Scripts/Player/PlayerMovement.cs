@@ -1,198 +1,115 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System.Collections;
 
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
-    public float rotationSpeed = 10f;
+    public float rotationSpeed = 8f;
+
+    [Header("Component References")]
+    public Rigidbody2D rb;
+    public Animator animator;
+    public SpriteRenderer spriteRenderer;
 
     private Vector2 movementInput;
-    private Rigidbody2D rb;
-    private InputAction moveAction;
-    private bool isPaused = false;
-    private bool isInitialized = false;
-    private Coroutine subscriptionCoroutine;
+    private Keyboard keyboard;
 
-    private void Awake()
+    void Start()
     {
-        rb = GetComponent<Rigidbody2D>();
+        // Obtener referencias
+        if (rb == null) rb = GetComponent<Rigidbody2D>();
+        if (animator == null) animator = GetComponent<Animator>();
+        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
 
-        if (rb == null)
+        // Configurar física
+        if (rb != null)
         {
-            Debug.LogError("❌ Rigidbody2D no encontrado en PlayerMovement");
-            // Intentar agregar uno automáticamente
-            rb = gameObject.AddComponent<Rigidbody2D>();
             rb.gravityScale = 0f;
-            rb.linearDamping = 1f;
-            rb.angularDamping = 0.05f;
-            rb.constraints = RigidbodyConstraints2D.FreezeRotation;
-            Debug.Log("🔨 Rigidbody2D agregado automáticamente");
+            rb.freezeRotation = true;
         }
 
-        // Configurar input
-        moveAction = new InputAction("Move", InputActionType.Value);
-        moveAction.AddCompositeBinding("2DVector")
-            .With("Up", "<Keyboard>/w")
-            .With("Down", "<Keyboard>/s")
-            .With("Left", "<Keyboard>/a")
-            .With("Right", "<Keyboard>/d");
-
-        moveAction.Enable();
-
-        // Iniciar proceso de suscripción al GameManager
-        subscriptionCoroutine = StartCoroutine(SubscribeToGameManager());
-
-        isInitialized = true;
-        Debug.Log("✅ PlayerMovement inicializado - Movimiento básico funcionando");
+        keyboard = Keyboard.current;
     }
 
-    private IEnumerator SubscribeToGameManager()
+    void Update()
     {
-        Debug.Log("🔄 PlayerMovement intentando suscribirse al GameManager...");
-
-        int maxAttempts = 10;
-        int attempts = 0;
-
-        while (attempts < maxAttempts)
-        {
-            attempts++;
-
-            // Usar el método GetOrCreateInstance para asegurar que existe
-            GameManager gameManager = GameManager.GetOrCreateInstance();
-
-            if (gameManager != null && gameManager.IsReady())
-            {
-                // Suscribirse al evento
-                gameManager.OnGameStateChanged += OnGameStateChanged;
-                Debug.Log($"✅ PlayerMovement suscrito a GameManager (intento {attempts})");
-                yield break; // Salir de la corrutina
-            }
-            else
-            {
-                Debug.Log($"⏳ Esperando GameManager... intento {attempts}/{maxAttempts}");
-                yield return new WaitForSeconds(0.5f);
-            }
-        }
-
-        // Si llegamos aquí, fallaron todos los intentos
-        Debug.LogWarning("⚠️ PlayerMovement no pudo suscribirse al GameManager después de " + maxAttempts + " intentos");
-        Debug.Log("🎮 El movimiento seguirá funcionando, pero sin integración con el sistema de pausa del GameManager");
+        HandleInput();
+        HandleAnimation();
+        HandleSmartRotation();
     }
 
-    private void Update()
+    void FixedUpdate()
     {
-        if (!isInitialized) return;
-
-        // Leer input siempre
-        movementInput = moveAction.ReadValue<Vector2>();
-
-        // Si no hay GameManager, siempre permitir movimiento
-        if (GameManager.Instance == null || !GameManager.Instance.IsReady())
-        {
-            // Movimiento sin restricciones de pausa
-            return;
-        }
-
-        // Aplicar lógica de pausa solo si GameManager está disponible
-        if (isPaused)
-        {
-            movementInput = Vector2.zero;
-        }
+        HandleMovement();
     }
 
-    private void FixedUpdate()
+    private void HandleInput()
     {
-        if (!isInitialized) return;
-        if (rb == null) return;
+        movementInput = Vector2.zero;
 
-        // Aplicar movimiento
-        MovePlayer();
+        // Input System directo
+        if (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed)
+            movementInput.y += 1f;
+        if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed)
+            movementInput.y -= 1f;
+        if (keyboard.aKey.isPressed || keyboard.leftArrowKey.isPressed)
+            movementInput.x -= 1f;
+        if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed)
+            movementInput.x += 1f;
 
-        // Rotar solo si hay movimiento
-        if (movementInput != Vector2.zero)
-        {
-            RotatePlayer();
-        }
+        // Normalizar para movimiento diagonal
+        if (movementInput.magnitude > 1f)
+            movementInput.Normalize();
     }
 
-    private void MovePlayer()
+    private void HandleMovement()
     {
-        Vector2 movement = movementInput * moveSpeed;
-        rb.linearVelocity = movement;
-
-        // Debug opcional del movimiento
-        if (movement != Vector2.zero && Time.frameCount % 60 == 0)
+        if (movementInput.magnitude > 0.1f)
         {
-            Debug.Log($"🎮 Movimiento: {movementInput}, Velocidad: {rb.linearVelocity.magnitude:F2}");
-        }
-    }
-
-    private void RotatePlayer()
-    {
-        float targetAngle = Mathf.Atan2(movementInput.y, movementInput.x) * Mathf.Rad2Deg;
-        Quaternion targetRotation = Quaternion.Euler(0, 0, targetAngle);
-        transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime);
-    }
-
-    private void OnGameStateChanged(GameState newState)
-    {
-        if (!isInitialized) return;
-
-        // Actualizar estado de pausa
-        isPaused = (newState == GameState.Paused);
-
-        if (isPaused)
-        {
-            // Forzar detención inmediata
-            movementInput = Vector2.zero;
-            if (rb != null)
-                rb.linearVelocity = Vector2.zero;
-
-            Debug.Log("⏸️ PlayerMovement: JUEGO EN PAUSA - Movimiento desactivado");
+            rb.linearVelocity = movementInput * moveSpeed;
         }
         else
         {
-            Debug.Log("▶️ PlayerMovement: JUEGO REANUDADO - Movimiento activado");
+            rb.linearVelocity = Vector2.zero;
         }
     }
 
-    public Vector2 GetCurrentVelocity()
+    private void HandleSmartRotation()
     {
-        return rb != null ? rb.linearVelocity : Vector2.zero;
+        if (movementInput.magnitude > 0.1f)
+        {
+            // Calcular el ángulo de movimiento
+            float targetAngle = Mathf.Atan2(movementInput.y, movementInput.x) * Mathf.Rad2Deg;
+
+            // CORRECCIÓN: Ajustar ángulo para direcciones izquierda
+            if (movementInput.x < 0)
+            {
+                // Cuando va hacia la izquierda, ajustamos el ángulo para que no quede boca abajo
+                targetAngle += 180f;
+            }
+
+            // Aplicar rotación suave
+            Quaternion targetRotation = Quaternion.Euler(0, 0, targetAngle);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+
+            // Flip horizontal basado en dirección
+            spriteRenderer.flipX = movementInput.x < 0;
+        }
+        else
+        {
+            // Volver suavemente a rotación neutral cuando está quieto
+            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.identity, rotationSpeed * Time.deltaTime);
+            spriteRenderer.flipX = false;
+        }
     }
 
-    private void OnDestroy()
+    private void HandleAnimation()
     {
-        // Limpiar input action
-        moveAction?.Disable();
-        moveAction?.Dispose();
-
-        // Detener corrutina si está en ejecución
-        if (subscriptionCoroutine != null)
+        if (animator != null)
         {
-            StopCoroutine(subscriptionCoroutine);
-        }
-
-        // Limpiar suscripción
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.OnGameStateChanged -= OnGameStateChanged;
-        }
-
-        Debug.Log("🗑️ PlayerMovement destruido y recursos liberados");
-    }
-
-    // Método para forzar la pausa manualmente (útil para testing)
-    public void SetPauseManually(bool pause)
-    {
-        isPaused = pause;
-        if (pause)
-        {
-            movementInput = Vector2.zero;
-            if (rb != null)
-                rb.linearVelocity = Vector2.zero;
+            bool isMoving = movementInput.magnitude > 0.1f;
+            animator.SetBool("isMoving", isMoving);
         }
     }
 }

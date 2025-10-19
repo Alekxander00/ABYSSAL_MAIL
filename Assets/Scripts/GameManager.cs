@@ -11,13 +11,13 @@ public class GameManager : MonoBehaviour
 
     [Header("Game State")]
     public GameState currentGameState = GameState.Exploring;
-    public int currentDay = 1;
 
     [Header("Player Progress")]
     public int completedMissionsCount = 0;
     public int totalEarnings = 0;
 
-    [Header("Available Missions")]
+    [Header("Missions - Oficina de Correos")]
+    public List<Mission> allMissions = new List<Mission>();
     public List<Mission> availableMissions = new List<Mission>();
     public List<Mission> activeMissions = new List<Mission>();
     public List<Mission> completedMissions = new List<Mission>();
@@ -33,15 +33,14 @@ public class GameManager : MonoBehaviour
 
     private bool isInitialized = false;
 
-    // Método estático para obtener la instancia (auto-crea si no existe)
+    // Método estático para obtener la instancia - CORREGIDO
     public static GameManager GetOrCreateInstance()
     {
         if (Instance == null)
         {
-            // Buscar en la escena
-            Instance = FindObjectOfType<GameManager>();
+            // CORRECCIÓN: Usar FindFirstObjectByType en lugar de FindObjectOfType
+            Instance = FindFirstObjectByType<GameManager>();
 
-            // Si no existe, crear uno nuevo
             if (Instance == null)
             {
                 Debug.Log("🔨 Creando GameManager automáticamente...");
@@ -55,10 +54,8 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
-        // Singleton pattern mejorado
         if (Instance != null && Instance != this)
         {
-            Debug.Log("⚠️ Destruyendo GameManager duplicado");
             Destroy(gameObject);
             return;
         }
@@ -75,108 +72,34 @@ public class GameManager : MonoBehaviour
 
         Debug.Log("🎮 Game Manager inicializado");
 
-        // Buscar player si no está asignado
         if (player == null)
         {
             player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null)
+        }
+
+        ChangeGameState(GameState.Exploring);
+        InitializeAvailableMissions();
+
+        isInitialized = true;
+        Debug.Log("✅ GameManager completamente inicializado");
+    }
+
+    private void InitializeAvailableMissions()
+    {
+        if (availableMissions.Count == 0 && allMissions.Count > 0)
+        {
+            foreach (Mission mission in allMissions)
             {
-                player = GameObject.Find("Player");
-                if (player == null)
+                if (mission.missionStatus == MissionStatus.Available)
                 {
-                    Debug.LogWarning("⚠️ Player no encontrado. Se buscará automáticamente.");
+                    availableMissions.Add(mission);
                 }
             }
         }
-
-        // Estado inicial del juego
-        ChangeGameState(GameState.Exploring);
-
-        isInitialized = true;
-
-        Debug.Log("✅ GameManager completamente inicializado y listo");
+        Debug.Log($"📋 Misiones disponibles: {availableMissions.Count}");
     }
 
-    private void Start()
-    {
-        // Verificación final
-        if (!isInitialized)
-        {
-            InitializeGame();
-        }
-
-        // Buscar player nuevamente en Start por si no se encontró en Awake
-        if (player == null)
-        {
-            FindPlayer();
-        }
-    }
-
-    private void FindPlayer()
-    {
-        player = GameObject.FindGameObjectWithTag("Player");
-        if (player == null)
-        {
-            player = GameObject.Find("Player");
-        }
-
-        if (player != null)
-        {
-            Debug.Log("✅ Player encontrado: " + player.name);
-        }
-        else
-        {
-            Debug.LogWarning("⚠️ Player sigue sin encontrarse. Algunas funciones pueden no trabajar correctamente.");
-        }
-    }
-
-    #region Game State Management
-    public void ChangeGameState(GameState newState)
-    {
-        if (!isInitialized)
-        {
-            Debug.LogWarning("⚠️ GameManager no inicializado al cambiar estado");
-            return;
-        }
-
-        GameState previousState = currentGameState;
-        currentGameState = newState;
-
-        // Aplicar lógica específica por estado
-        switch (newState)
-        {
-            case GameState.Paused:
-                SetPause(true);
-                break;
-            default:
-                SetPause(false);
-                break;
-        }
-
-        // Disparar evento de manera segura
-        OnGameStateChanged?.Invoke(newState);
-
-        Debug.Log($"🔄 Estado del juego: {previousState} -> {newState}");
-    }
-
-    private void SetPause(bool pause)
-    {
-        if (!isInitialized) return;
-
-        if (pause)
-        {
-            Time.timeScale = 0f;
-            Debug.Log("⏸️ TIME SCALE = 0 (JUEGO PAUSADO)");
-        }
-        else
-        {
-            Time.timeScale = 1f;
-            Debug.Log("▶️ TIME SCALE = 1 (JUEGO REANUDADO)");
-        }
-    }
-    #endregion
-
-    #region Mission Management
+    #region Mission Management - Oficina de Correos
     public void AcceptMission(Mission mission)
     {
         if (!isInitialized) return;
@@ -186,6 +109,11 @@ public class GameManager : MonoBehaviour
             availableMissions.Remove(mission);
             activeMissions.Add(mission);
             mission.missionStatus = MissionStatus.InProgress;
+
+            if (mission.requiredItem != null && !playerInventory.Contains(mission.requiredItem))
+            {
+                AddItemToInventory(mission.requiredItem);
+            }
 
             OnMissionAccepted?.Invoke(mission);
             Debug.Log($"✅ Misión aceptada: {mission.missionName}");
@@ -205,18 +133,76 @@ public class GameManager : MonoBehaviour
             totalEarnings += mission.moneyReward;
             completedMissionsCount++;
 
-            OnMissionCompleted?.Invoke(mission);
+            if (mission.itemRewards != null)
+            {
+                foreach (Item rewardItem in mission.itemRewards)
+                {
+                    AddItemToInventory(rewardItem);
+                }
+            }
 
+            OnMissionCompleted?.Invoke(mission);
             Debug.Log($"🎉 Misión completada: {mission.missionName}");
             Debug.Log($"💰 +{mission.moneyReward} monedas");
+
+            UIManager.Instance?.UpdateHUD();
         }
     }
 
     public bool CanAcceptMission(Mission mission)
     {
         if (!isInitialized) return false;
-
         return availableMissions.Contains(mission) && activeMissions.Count < 3;
+    }
+
+    public void AddMissionToAvailable(Mission mission)
+    {
+        if (!isInitialized) return;
+
+        if (!availableMissions.Contains(mission))
+        {
+            availableMissions.Add(mission);
+            mission.missionStatus = MissionStatus.Available;
+            Debug.Log($"📋 Misión añadida a disponibles: {mission.missionName}");
+        }
+    }
+
+    // MÉTODO NUEVO - Agregado para solucionar el error en NPCBase
+    public Mission GetMissionForNPC(string npcName)
+    {
+        if (!isInitialized) return null;
+
+        foreach (Mission mission in allMissions)
+        {
+            if (mission.targetNPCName == npcName)
+            {
+                return mission;
+            }
+        }
+        return null;
+    }
+    #endregion
+
+    #region Game State Management
+    public void ChangeGameState(GameState newState)
+    {
+        if (!isInitialized) return;
+
+        GameState previousState = currentGameState;
+        currentGameState = newState;
+
+        switch (newState)
+        {
+            case GameState.Paused:
+                Time.timeScale = 0f;
+                break;
+            default:
+                Time.timeScale = 1f;
+                break;
+        }
+
+        OnGameStateChanged?.Invoke(newState);
+        Debug.Log($"🔄 Estado del juego: {previousState} -> {newState}");
     }
     #endregion
 
@@ -245,6 +231,7 @@ public class GameManager : MonoBehaviour
         if (playerInventory.Contains(item))
         {
             playerInventory.Remove(item);
+            Debug.Log($"🎒 Item removido: {item.itemName}");
             return true;
         }
         return false;
@@ -266,28 +253,10 @@ public class GameManager : MonoBehaviour
         Debug.Log($"💰 Dinero total: {totalEarnings}");
     }
 
-    [ContextMenu("Test Pause Game")]
-    private void TestPauseGame()
-    {
-        if (!isInitialized) return;
-        ChangeGameState(GameState.Paused);
-    }
-
-    [ContextMenu("Test Resume Game")]
-    private void TestResumeGame()
-    {
-        if (!isInitialized) return;
-        ChangeGameState(GameState.Exploring);
-    }
-
     [ContextMenu("Print Game Status")]
     private void PrintGameStatus()
     {
-        if (!isInitialized)
-        {
-            Debug.Log("❌ GameManager no está inicializado");
-            return;
-        }
+        if (!isInitialized) return;
 
         Debug.Log($"🎮 ESTADO DEL JUEGO:");
         Debug.Log($"💰 Dinero: {totalEarnings}");
@@ -295,19 +264,14 @@ public class GameManager : MonoBehaviour
         Debug.Log($"📋 Misiones activas: {activeMissions.Count}");
         Debug.Log($"📂 Misiones disponibles: {availableMissions.Count}");
         Debug.Log($"🎒 Items en inventario: {playerInventory.Count}");
-        Debug.Log($"🔄 Estado actual: {currentGameState}");
-        Debug.Log($"⏰ TimeScale: {Time.timeScale}");
-        Debug.Log($"🎯 Player asignado: {player != null}");
     }
     #endregion
 
-    // Método público para verificar si está inicializado
     public bool IsReady()
     {
         return isInitialized;
     }
 
-    // Método para forzar la inicialización
     public void ForceInitialize()
     {
         if (!isInitialized)

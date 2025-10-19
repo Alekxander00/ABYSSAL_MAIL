@@ -10,13 +10,14 @@ GameObject:
   m_Component:
   - component: {fileID: 1549395605636540824}
   - component: {fileID: 1975541653644371806}
-  - component: {fileID: 6421087464627446549}
+  - component: {fileID: 4840032691508642682}
   - component: {fileID: 1708517363510248898}
   - component: {fileID: 5436599733450633559}
   - component: {fileID: 268403244275251572}
   - component: {fileID: 4742056997829389968}
   - component: {fileID: 4884790842230640503}
   - component: {fileID: 5879189231395149304}
+  - component: {fileID: 6297491030899510540}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -91,14 +92,14 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 0.16, y: 0.16}
+  m_Size: {x: 1.19, y: 0.4}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!58 &6421087464627446549
-CircleCollider2D:
+--- !u!61 &4840032691508642682
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -132,7 +133,17 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.07999999
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1.19, y: 0.4}
+    newSize: {x: 1.19, y: 0.4}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Size: {x: 1.19, y: 0.4}
+  m_EdgeRadius: 0
 --- !u!50 &1708517363510248898
 Rigidbody2D:
   serializedVersion: 5
@@ -234,3 +245,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Inventory
   maxSlots: 10
   items: []
+--- !u!114 &6297491030899510540
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1460769713914996793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a72b3c3dc0044a34491dc192c6b9111d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerAnimation
+  animator: {fileID: 0}

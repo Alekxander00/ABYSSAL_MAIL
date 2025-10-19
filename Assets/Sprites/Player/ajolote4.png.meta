@@ -1,10 +1,16 @@
 fileFormatVersion: 2
-guid: a9ba441cc2b1d2c4db957c4d40360658
+guid: 972fec91420631f4e8b2931e91d9d138
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2505384932782945260
-    second: ajolote1_0
+      213: -5205231718002902449
+    second: ajolote4_0
+  - first:
+      213: -1005699165652212708
+    second: ajolote4_1
+  - first:
+      213: 6972330419719463946
+    second: ajolote4_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +119,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ajolote1_0
+      name: ajolote4_0
       rect:
         serializedVersion: 2
-        x: 33
-        y: 11
-        width: 119
-        height: 40
+        x: 30
+        y: 6
+        width: 122
+        height: 45
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +134,52 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 41c4bdf7da51b3dd0800000000000000
-      internalID: -2505384932782945260
+      spriteID: f4a37dab45d43c7b0800000000000000
+      internalID: -5205231718002902449
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ajolote4_1
+      rect:
+        serializedVersion: 2
+        x: 58
+        y: 4
+        width: 13
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c14a460ffe90b02f0800000000000000
+      internalID: -1005699165652212708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: ajolote4_2
+      rect:
+        serializedVersion: 2
+        x: 68
+        y: 1
+        width: 9
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a0467046391b2c060800000000000000
+      internalID: 6972330419719463946
       vertices: []
       indices: 
       edges: []
@@ -148,7 +198,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      ajolote1_0: -2505384932782945260
+      ajolote4_0: -5205231718002902449
+      ajolote4_1: -1005699165652212708
+      ajolote4_2: 6972330419719463946
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

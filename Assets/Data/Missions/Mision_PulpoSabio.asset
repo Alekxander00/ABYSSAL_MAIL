@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07639a34d1c58424798391d025263ddb, type: 3}
+  m_Name: Mision_PulpoSabio
+  m_EditorClassIdentifier: Assembly-CSharp::Mission
+  missionName: Libro Antiguo
+  description: Lleva el libro de conocimientos ancestrales al Pulpo Sabio
+  missionType: 0
+  requiredReputation: 0
+  requiredItem: {fileID: 11400000, guid: 7c38651ef1318914fa5d233274bd1087, type: 2}
+  targetNPCName: Pulpo Sabio
+  moneyReward: 50
+  reputationReward: 10
+  itemRewards: []
+  missionStatus: 0
+  itemToCollect: {fileID: 0}
+  requiredQuantity: 1
+  currentQuantity: 0

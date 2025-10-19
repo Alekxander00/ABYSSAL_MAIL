@@ -9,29 +9,30 @@ public class UIManager : MonoBehaviour
     public static UIManager Instance { get; private set; }
 
     [Header("Menu References")]
-    public GameObject missionMenu;
+    public GameObject missionMenu; // Oficina de correos
     public GameObject pauseMenu;
     public GameObject hud;
 
-    [Header("Mission Menu References - TMP")]
+    [Header("Mission Menu References - Oficina de Correos")]
+    public Transform missionsContainer; // Contenedor para listar misiones
     public TextMeshProUGUI missionTitleText;
     public TextMeshProUGUI missionDescriptionText;
     public TextMeshProUGUI missionRewardText;
+    public TextMeshProUGUI missionNPCText;
     public Button acceptMissionButton;
     public Button closeMissionButton;
+
+    [Header("Mission Prefab")]
+    public GameObject missionButtonPrefab; // Prefab para botones de misión
 
     [Header("Pause Menu References")]
     public Button resumeButton;
     public Button quitButton;
 
-    [Header("HUD References - TMP")]
+    [Header("HUD References")]
     public TextMeshProUGUI healthText;
     public TextMeshProUGUI missionCounterText;
     public TextMeshProUGUI moneyText;
-
-    [Header("UI Settings")]
-    public bool enableMissionMenu = true;
-    public bool enablePauseMenu = true;
 
     private bool isMissionMenuOpen = false;
     private bool isPauseMenuOpen = false;
@@ -41,20 +42,19 @@ public class UIManager : MonoBehaviour
     private InputAction missionMenuAction;
     private InputAction pauseMenuAction;
 
+    // Misión seleccionada actualmente
+    private Mission selectedMission;
+
     private void Awake()
     {
-        // Singleton pattern
         if (Instance != null && Instance != this)
         {
-            Debug.Log("🗑️ Destruyendo UIManager duplicado");
             Destroy(gameObject);
             return;
         }
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        Debug.Log("🖥️ UIManager inicializado");
     }
 
     private void Start()
@@ -63,20 +63,13 @@ public class UIManager : MonoBehaviour
         SetupButtonListeners();
         SetupInputActions();
 
-        // Asegurar que GameManager existe
-        GameManager gameManager = GameManager.GetOrCreateInstance();
-        if (gameManager != null)
-        {
-            gameManager.ForceInitialize();
-        }
+        GameManager.GetOrCreateInstance().ForceInitialize();
 
         isInitialized = true;
-        Debug.Log("✅ UIManager completamente inicializado");
     }
 
     private void Update()
     {
-        // Actualizar HUD cada frame
         if (isInitialized)
         {
             UpdateHUD();
@@ -85,163 +78,69 @@ public class UIManager : MonoBehaviour
 
     private void InitializeUI()
     {
-        // Verificar referencias críticas
-        if (missionMenu == null) Debug.LogWarning("⚠️ MissionMenu no asignado en UIManager");
-        if (pauseMenu == null) Debug.LogWarning("⚠️ PauseMenu no asignado en UIManager");
-        if (hud == null) Debug.LogWarning("⚠️ HUD no asignado en UIManager");
-
-        // Ocultar todos los menús al inicio
         if (missionMenu != null) missionMenu.SetActive(false);
         if (pauseMenu != null) pauseMenu.SetActive(false);
         if (hud != null) hud.SetActive(true);
-
-        Debug.Log("🔄 UI inicializada - Menús ocultos, HUD visible");
     }
 
     private void SetupButtonListeners()
     {
-        // Mission Menu buttons
         if (closeMissionButton != null)
-        {
             closeMissionButton.onClick.AddListener(CloseMissionMenu);
-            Debug.Log("✅ CloseMissionButton configurado");
-        }
-        else
-        {
-            Debug.LogWarning("⚠️ CloseMissionButton no asignado");
-        }
 
         if (acceptMissionButton != null)
-        {
-            acceptMissionButton.onClick.AddListener(AcceptCurrentMission);
-            Debug.Log("✅ AcceptMissionButton configurado");
-        }
-        else
-        {
-            Debug.LogWarning("⚠️ AcceptMissionButton no asignado");
-        }
+            acceptMissionButton.onClick.AddListener(AcceptSelectedMission);
 
-        // Pause Menu buttons
         if (resumeButton != null)
-        {
             resumeButton.onClick.AddListener(ResumeGame);
-            Debug.Log("✅ ResumeButton configurado");
-        }
-        else
-        {
-            Debug.LogWarning("⚠️ ResumeButton no asignado");
-        }
 
         if (quitButton != null)
-        {
             quitButton.onClick.AddListener(QuitGame);
-            Debug.Log("✅ QuitButton configurado");
-        }
-        else
-        {
-            Debug.LogWarning("⚠️ QuitButton no asignado");
-        }
     }
 
     private void SetupInputActions()
     {
-        try
-        {
-            // Menú de misiones - M o Tab
-            if (enableMissionMenu)
-            {
-                missionMenuAction = new InputAction("MissionMenu", InputActionType.Button);
-                missionMenuAction.AddBinding("<Keyboard>/m");
-                missionMenuAction.AddBinding("<Keyboard>/tab");
-                missionMenuAction.performed += OnMissionMenuInput;
-                missionMenuAction.Enable();
-                Debug.Log("🎮 Mission Menu Input configurado (M/Tab)");
-            }
+        // Oficina de correos - M o Tab
+        missionMenuAction = new InputAction("MissionMenu", InputActionType.Button);
+        missionMenuAction.AddBinding("<Keyboard>/m");
+        missionMenuAction.AddBinding("<Keyboard>/tab");
+        missionMenuAction.performed += _ => ToggleMissionMenu();
+        missionMenuAction.Enable();
 
-            // Menú de pausa - Escape
-            if (enablePauseMenu)
-            {
-                pauseMenuAction = new InputAction("PauseMenu", InputActionType.Button);
-                pauseMenuAction.AddBinding("<Keyboard>/escape");
-                pauseMenuAction.performed += OnPauseMenuInput;
-                pauseMenuAction.Enable();
-                Debug.Log("🎮 Pause Menu Input configurado (Escape)");
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"❌ Error configurando Input Actions: {e.Message}");
-        }
+        // Menú de pausa - Escape
+        pauseMenuAction = new InputAction("PauseMenu", InputActionType.Button);
+        pauseMenuAction.AddBinding("<Keyboard>/escape");
+        pauseMenuAction.performed += _ => TogglePauseMenu();
+        pauseMenuAction.Enable();
     }
 
-    #region Input Handlers
-    private void OnMissionMenuInput(InputAction.CallbackContext context)
-    {
-        if (!context.performed) return;
-        if (!isInitialized) return;
-        if (!enableMissionMenu) return;
-
-        // Verificar que no estamos en pausa
-        if (isPauseMenuOpen)
-        {
-            Debug.Log("⚠️ No se puede abrir Mission Menu mientras está en pausa");
-            return;
-        }
-
-        ToggleMissionMenu();
-    }
-
-    private void OnPauseMenuInput(InputAction.CallbackContext context)
-    {
-        if (!context.performed) return;
-        if (!isInitialized) return;
-        if (!enablePauseMenu) return;
-
-        TogglePauseMenu();
-    }
-    #endregion
-
-    #region Mission Menu
+    #region Mission Menu - Oficina de Correos
     public void OpenMissionMenu()
     {
-        if (!isInitialized) return;
         if (isPauseMenuOpen) return;
         if (missionMenu == null) return;
-        if (!enableMissionMenu) return;
 
         missionMenu.SetActive(true);
         if (hud != null) hud.SetActive(false);
         isMissionMenuOpen = true;
 
-        // Cambiar estado del juego
-        GameManager gameManager = GameManager.GetOrCreateInstance();
-        if (gameManager != null && gameManager.IsReady())
-        {
-            gameManager.ChangeGameState(GameState.InMenu);
-        }
+        GameManager.Instance.ChangeGameState(GameState.InMenu);
+        UpdateMissionMenuDisplay();
 
-        UpdateMissionDisplay();
-
-        Debug.Log("📋 Menú de misiones abierto");
+        Debug.Log("🏣 Oficina de correos abierta");
     }
 
     public void CloseMissionMenu()
     {
-        if (!isInitialized) return;
         if (missionMenu == null) return;
 
         missionMenu.SetActive(false);
         if (hud != null) hud.SetActive(true);
         isMissionMenuOpen = false;
 
-        // Restaurar estado del juego
-        GameManager gameManager = GameManager.GetOrCreateInstance();
-        if (gameManager != null && gameManager.IsReady())
-        {
-            gameManager.ChangeGameState(GameState.Exploring);
-        }
+        GameManager.Instance.ChangeGameState(GameState.Exploring);
 
-        Debug.Log("📋 Menú de misiones cerrado");
+        Debug.Log("🏣 Oficina de correos cerrada");
     }
 
     private void ToggleMissionMenu()
@@ -252,58 +151,96 @@ public class UIManager : MonoBehaviour
             OpenMissionMenu();
     }
 
-    private void UpdateMissionDisplay()
+    private void UpdateMissionMenuDisplay()
     {
-        GameManager gameManager = GameManager.GetOrCreateInstance();
+        ClearMissionButtons();
+
+        GameManager gameManager = GameManager.Instance;
         if (gameManager == null || !gameManager.IsReady())
         {
-            SetMissionDisplayText("GameManager no disponible", "Intenta más tarde", "");
+            SetMissionDisplayText("Oficina de Correos", "No hay misiones disponibles", "Vuelve más tarde", "");
             return;
         }
 
+        // Listar todas las misiones disponibles
         if (gameManager.availableMissions.Count > 0)
         {
-            Mission currentMission = gameManager.availableMissions[0];
-            SetMissionDisplayText(
-                currentMission.missionName,
-                currentMission.description,
-                $"Recompensa: ${currentMission.moneyReward}"
-            );
+            foreach (Mission mission in gameManager.availableMissions)
+            {
+                CreateMissionButton(mission);
+            }
+
+            // Seleccionar la primera misión por defecto
+            SelectMission(gameManager.availableMissions[0]);
         }
         else
         {
-            SetMissionDisplayText(
-                "No hay misiones disponibles",
-                "Vuelve más tarde para nuevas misiones",
-                ""
-            );
+            SetMissionDisplayText("Oficina de Correos", "No hay misiones disponibles", "Vuelve más tarde para nuevas entregas", "");
+            acceptMissionButton.interactable = false;
         }
     }
 
-    private void SetMissionDisplayText(string title, string description, string reward)
+    private void CreateMissionButton(Mission mission)
+    {
+        if (missionButtonPrefab == null || missionsContainer == null) return;
+
+        GameObject missionButtonObj = Instantiate(missionButtonPrefab, missionsContainer);
+        Button missionButton = missionButtonObj.GetComponent<Button>();
+        TextMeshProUGUI buttonText = missionButtonObj.GetComponentInChildren<TextMeshProUGUI>();
+
+        if (buttonText != null)
+        {
+            buttonText.text = $"{mission.missionName} - ${mission.moneyReward}";
+        }
+
+        if (missionButton != null)
+        {
+            missionButton.onClick.AddListener(() => SelectMission(mission));
+        }
+    }
+
+    private void ClearMissionButtons()
+    {
+        if (missionsContainer == null) return;
+
+        foreach (Transform child in missionsContainer)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
+    private void SelectMission(Mission mission)
+    {
+        selectedMission = mission;
+
+        if (mission != null)
+        {
+            SetMissionDisplayText(
+                mission.missionName,
+                mission.description,
+                $"Recompensa: ${mission.moneyReward}",
+                $"Entregar a: {mission.targetNPCName}"
+            );
+
+            acceptMissionButton.interactable = GameManager.Instance.CanAcceptMission(mission);
+        }
+    }
+
+    private void SetMissionDisplayText(string title, string description, string reward, string npc)
     {
         if (missionTitleText != null) missionTitleText.text = title;
         if (missionDescriptionText != null) missionDescriptionText.text = description;
         if (missionRewardText != null) missionRewardText.text = reward;
+        if (missionNPCText != null) missionNPCText.text = npc;
     }
 
-    private void AcceptCurrentMission()
+    private void AcceptSelectedMission()
     {
-        GameManager gameManager = GameManager.GetOrCreateInstance();
-        if (gameManager == null || !gameManager.IsReady()) return;
-
-        if (gameManager.availableMissions.Count > 0)
+        if (selectedMission != null && GameManager.Instance != null)
         {
-            Mission mission = gameManager.availableMissions[0];
-            gameManager.AcceptMission(mission);
+            GameManager.Instance.AcceptMission(selectedMission);
             CloseMissionMenu();
-
-            // Actualizar HUD inmediatamente
             UpdateHUD();
-        }
-        else
-        {
-            Debug.LogWarning("⚠️ No hay misiones disponibles para aceptar");
         }
     }
     #endregion
@@ -311,68 +248,24 @@ public class UIManager : MonoBehaviour
     #region Pause Menu
     public void OpenPauseMenu()
     {
-        if (!isInitialized)
-        {
-            Debug.LogError("❌ UIManager no inicializado en OpenPauseMenu");
-            return;
-        }
-
-        if (pauseMenu == null)
-        {
-            Debug.LogError("❌ PauseMenu no asignado en UIManager");
-            return;
-        }
-
-        if (!enablePauseMenu)
-        {
-            Debug.LogWarning("⚠️ PauseMenu está deshabilitado en configuración");
-            return;
-        }
-
-        GameManager gameManager = GameManager.GetOrCreateInstance();
-        if (gameManager == null)
-        {
-            Debug.LogError("❌ GameManager no disponible en OpenPauseMenu");
-            return;
-        }
-
-        if (!gameManager.IsReady())
-        {
-            Debug.LogError("❌ GameManager no está listo en OpenPauseMenu");
-            return;
-        }
-
-        // Cerrar mission menu si está abierto
-        if (isMissionMenuOpen)
-        {
-            CloseMissionMenu();
-        }
+        if (pauseMenu == null) return;
 
         pauseMenu.SetActive(true);
         if (hud != null) hud.SetActive(false);
         isPauseMenuOpen = true;
 
-        gameManager.ChangeGameState(GameState.Paused);
-
-        Debug.Log("⏸️ Menú de pausa abierto correctamente");
+        GameManager.Instance.ChangeGameState(GameState.Paused);
     }
 
     public void ClosePauseMenu()
     {
-        if (!isInitialized) return;
         if (pauseMenu == null) return;
 
         pauseMenu.SetActive(false);
         if (hud != null) hud.SetActive(true);
         isPauseMenuOpen = false;
 
-        GameManager gameManager = GameManager.GetOrCreateInstance();
-        if (gameManager != null && gameManager.IsReady())
-        {
-            gameManager.ChangeGameState(GameState.Exploring);
-        }
-
-        Debug.Log("▶️ Menú de pausa cerrado correctamente");
+        GameManager.Instance.ChangeGameState(GameState.Exploring);
     }
 
     private void TogglePauseMenu()
@@ -391,13 +284,7 @@ public class UIManager : MonoBehaviour
     private void QuitGame()
     {
         Debug.Log("🚪 Saliendo del juego...");
-
-        // Asegurar que el juego se reanude antes de salir
-        GameManager gameManager = GameManager.GetOrCreateInstance();
-        if (gameManager != null && gameManager.IsReady())
-        {
-            gameManager.ChangeGameState(GameState.Exploring);
-        }
+        GameManager.Instance.ChangeGameState(GameState.Exploring);
 
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
@@ -407,18 +294,18 @@ public class UIManager : MonoBehaviour
     }
     #endregion
 
-    #region HUD System
+    #region HUD Updates
     public void UpdateHUD()
     {
         if (!isInitialized) return;
 
-        GameManager gameManager = GameManager.GetOrCreateInstance();
+        GameManager gameManager = GameManager.Instance;
         if (gameManager == null || !gameManager.IsReady()) return;
 
         // Actualizar contador de misiones
         if (missionCounterText != null)
         {
-            missionCounterText.text = $"Misiones: {gameManager.activeMissions.Count}/3";
+            missionCounterText.text = $"Entregas: {gameManager.activeMissions.Count}/3";
         }
 
         // Actualizar dinero
@@ -426,132 +313,32 @@ public class UIManager : MonoBehaviour
         {
             moneyText.text = $"Dinero: ${gameManager.totalEarnings}";
         }
-
-        // Actualizar salud si existe
-        UpdateHealthDisplay();
     }
 
-    private void UpdateHealthDisplay()
-    {
-        if (healthText == null) return;
-
-        GameManager gameManager = GameManager.GetOrCreateInstance();
-        if (gameManager == null || !gameManager.IsReady()) return;
-        if (gameManager.player == null) return;
-
-        PlayerHealth health = gameManager.player.GetComponent<PlayerHealth>();
-        if (health != null)
-        {
-            healthText.text = $"Salud: {health.currentHealth}/{health.maxHealth}";
-        }
-        else
-        {
-            healthText.text = "Salud: N/A";
-        }
-    }
-
-    public void ShowHUD()
-    {
-        if (hud != null)
-        {
-            hud.SetActive(true);
-            Debug.Log("👁️ HUD mostrado");
-        }
-    }
-
-    public void HideHUD()
-    {
-        if (hud != null)
-        {
-            hud.SetActive(false);
-            Debug.Log("👁️ HUD ocultado");
-        }
-    }
-    #endregion
-
-    #region Public Methods
     public void ShowMissionComplete(string missionName, int reward)
     {
-        // Aquí podrías implementar un popup de misión completada
+        StartCoroutine(ShowMissionCompleteCoroutine(missionName, reward));
+    }
+
+    private IEnumerator ShowMissionCompleteCoroutine(string missionName, int reward)
+    {
+        // Aquí podrías mostrar un popup de misión completada
         Debug.Log($"🎉 Misión completada: {missionName} - Recompensa: ${reward}");
 
-        // Actualizar HUD inmediatamente
+        // Actualizar HUD
         UpdateHUD();
-    }
 
-    public void ShowNotification(string message, float duration = 3f)
-    {
-        // Aquí podrías implementar un sistema de notificaciones
-        Debug.Log($"💬 Notificación: {message}");
-
-        StartCoroutine(ClearNotificationAfter(duration));
-    }
-
-    private IEnumerator ClearNotificationAfter(float duration)
-    {
-        yield return new WaitForSeconds(duration);
-        // Limpiar notificación
-    }
-
-    public bool IsAnyMenuOpen()
-    {
-        return isMissionMenuOpen || isPauseMenuOpen;
-    }
-
-    public void ForceCloseAllMenus()
-    {
-        if (isMissionMenuOpen) CloseMissionMenu();
-        if (isPauseMenuOpen) ClosePauseMenu();
-        ShowHUD();
-
-        Debug.Log("🔄 Todos los menús cerrados forzosamente");
-    }
-    #endregion
-
-    #region Debug Methods
-    [ContextMenu("Test Mission Menu")]
-    public void TestMissionMenu()
-    {
-        if (!isInitialized) return;
-
-        if (isMissionMenuOpen)
-            CloseMissionMenu();
-        else
-            OpenMissionMenu();
-    }
-
-    [ContextMenu("Test Pause Menu")]
-    public void TestPauseMenu()
-    {
-        if (!isInitialized) return;
-
-        if (isPauseMenuOpen)
-            ClosePauseMenu();
-        else
-            OpenPauseMenu();
-    }
-
-    [ContextMenu("Print UI Status")]
-    public void PrintUIStatus()
-    {
-        Debug.Log($"🎮 ESTADO DE UI:");
-        Debug.Log($"📋 Mission Menu: {(isMissionMenuOpen ? "Abierto" : "Cerrado")}");
-        Debug.Log($"⏸️ Pause Menu: {(isPauseMenuOpen ? "Abierto" : "Cerrado")}");
-        Debug.Log($"👁️ HUD: {(hud != null && hud.activeSelf ? "Visible" : "Oculto")}");
-        Debug.Log($"🔄 Inicializado: {isInitialized}");
+        yield return new WaitForSeconds(2f);
+        // Ocultar el popup
     }
     #endregion
 
     private void OnDestroy()
     {
-        // Limpiar recursos de Input System
         missionMenuAction?.Dispose();
         pauseMenuAction?.Dispose();
-
-        Debug.Log("🗑️ UIManager destruido y recursos liberados");
     }
 
-    // Método público para verificar si está inicializado
     public bool IsReady()
     {
         return isInitialized;
