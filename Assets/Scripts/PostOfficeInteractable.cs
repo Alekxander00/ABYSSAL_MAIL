@@ -1,4 +1,6 @@
 ﻿using UnityEngine;
+using UnityEngine.InputSystem;
+using System.Collections;
 
 public class PostOfficeInteractable : Interactable
 {
@@ -12,10 +14,12 @@ public class PostOfficeInteractable : Interactable
 
     private bool canInteract = true;
     private bool playerInRange = false;
+    private Keyboard keyboard;
 
     void Start()
     {
-        // Ocultar prompt al inicio
+        keyboard = Keyboard.current;
+
         if (interactionPrompt != null)
             interactionPrompt.SetActive(false);
     }
@@ -31,7 +35,6 @@ public class PostOfficeInteractable : Interactable
         {
             playerInRange = true;
             ShowInteractionPrompt();
-            Debug.Log($"🏣 Jugador cerca de {officeName}");
         }
     }
 
@@ -41,13 +44,12 @@ public class PostOfficeInteractable : Interactable
         {
             playerInRange = false;
             HideInteractionPrompt();
-            Debug.Log($"🏣 Jugador se alejó de {officeName}");
         }
     }
 
     private void HandleInteractionInput()
     {
-        if (playerInRange && canInteract && Input.GetKeyDown(KeyCode.E))
+        if (playerInRange && canInteract && keyboard.eKey.wasPressedThisFrame)
         {
             InteractWithPostOffice();
         }
@@ -56,8 +58,6 @@ public class PostOfficeInteractable : Interactable
     private void InteractWithPostOffice()
     {
         if (!canInteract) return;
-
-        Debug.Log($"🏣 Interactuando con {officeName}");
 
         // Efectos visuales
         if (postOfficeEffects != null)
@@ -96,22 +96,22 @@ public class PostOfficeInteractable : Interactable
         if (UIManager.Instance != null)
         {
             UIManager.Instance.OpenMissionMenu();
-            Debug.Log("📋 Menú de misiones abierto");
-        }
-        else
-        {
-            Debug.LogError("❌ UIManager no encontrado");
         }
     }
 
     public override void Interact(GameObject player)
     {
-        // Implementación requerida por la clase base
         InteractWithPostOffice();
     }
 
     public override bool CanInteract()
     {
         return canInteract && playerInRange;
+    }
+
+    // Método para que el UIManager pueda notificar cuando se cierra el menú
+    public void OnMissionMenuClosed()
+    {
+        HideInteractionPrompt();
     }
 }

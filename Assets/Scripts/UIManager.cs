@@ -38,8 +38,7 @@ public class UIManager : MonoBehaviour
     private bool isPauseMenuOpen = false;
     private bool isInitialized = false;
 
-    // Input Actions
-    private InputAction missionMenuAction;
+    // Input Actions - SOLO PAUSA
     private InputAction pauseMenuAction;
 
     // Misión seleccionada actualmente
@@ -66,6 +65,7 @@ public class UIManager : MonoBehaviour
         GameManager.GetOrCreateInstance().ForceInitialize();
 
         isInitialized = true;
+        Debug.Log("✅ UIManager completamente inicializado - Teclas M/Tab desactivadas");
     }
 
     private void Update()
@@ -100,34 +100,61 @@ public class UIManager : MonoBehaviour
 
     private void SetupInputActions()
     {
-        // Oficina de correos - M o Tab
-        missionMenuAction = new InputAction("MissionMenu", InputActionType.Button);
-        missionMenuAction.AddBinding("<Keyboard>/m");
-        missionMenuAction.AddBinding("<Keyboard>/tab");
-        missionMenuAction.performed += _ => ToggleMissionMenu();
-        missionMenuAction.Enable();
-
-        // Menú de pausa - Escape
+        // ✅ SOLO configurar menú de pausa - ELIMINADO menú de misiones por teclado
         pauseMenuAction = new InputAction("PauseMenu", InputActionType.Button);
         pauseMenuAction.AddBinding("<Keyboard>/escape");
         pauseMenuAction.performed += _ => TogglePauseMenu();
         pauseMenuAction.Enable();
+
+        Debug.Log("🎮 Input System configurado - Solo Escape para pausa");
     }
 
-    #region Mission Menu - Oficina de Correos
+    #region Mission Menu - Oficina de Correos (SOLO DESDE INTERACCIÓN)
     public void OpenMissionMenu()
     {
-        if (isPauseMenuOpen) return;
-        if (missionMenu == null) return;
+        Debug.Log("🎯 UIManager.OpenMissionMenu() ejecutándose desde Oficina...");
+
+        if (isPauseMenuOpen)
+        {
+            Debug.Log("⏸ No se puede abrir menú de misiones - Menú de pausa abierto");
+            return;
+        }
+
+        if (missionMenu == null)
+        {
+            Debug.LogError("❌ missionMenu es null - No asignado en el Inspector");
+            return;
+        }
+
+        Debug.Log($"✅ missionMenu encontrado - Estado actual: {missionMenu.activeSelf}");
 
         missionMenu.SetActive(true);
-        if (hud != null) hud.SetActive(false);
+        Debug.Log("✅ missionMenu activado");
+
+        if (hud != null)
+        {
+            hud.SetActive(false);
+            Debug.Log("✅ HUD desactivado");
+        }
+        else
+        {
+            Debug.LogWarning("⚠️ hud es null");
+        }
+
         isMissionMenuOpen = true;
 
-        GameManager.Instance.ChangeGameState(GameState.InMenu);
-        UpdateMissionMenuDisplay();
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.ChangeGameState(GameState.InMenu);
+            Debug.Log("✅ Estado del juego cambiado a InMenu");
+        }
+        else
+        {
+            Debug.LogError("❌ GameManager.Instance es null");
+        }
 
-        Debug.Log("🏣 Oficina de correos - Menú de misiones abierto");
+        UpdateMissionMenuDisplay();
+        Debug.Log("✅ Menú de misiones completamente abierto desde Oficina de Correos");
     }
 
     public void CloseMissionMenu()
@@ -139,16 +166,27 @@ public class UIManager : MonoBehaviour
         isMissionMenuOpen = false;
 
         GameManager.Instance.ChangeGameState(GameState.Exploring);
-        Debug.Log("🏣 Oficina de correos - Menú de misiones cerrado");
+
+        // ✅ NOTIFICAR a la oficina que el menú se cerró
+        NotifyPostOfficeMenuClosed();
+
+        Debug.Log("🏣 Menú de misiones cerrado");
     }
 
-
-    private void ToggleMissionMenu()
+    // ✅ NUEVO: Notificar a la oficina que el menú se cerró
+    private void NotifyPostOfficeMenuClosed()
     {
-        if (isMissionMenuOpen)
-            CloseMissionMenu();
+        // Buscar la oficina de correos en la escena
+        PostOfficeInteractable postOffice = FindObjectOfType<PostOfficeInteractable>();
+        if (postOffice != null)
+        {
+            postOffice.OnMissionMenuClosed();
+            Debug.Log("📞 Notificando a Oficina de Correos que el menú se cerró");
+        }
         else
-            OpenMissionMenu();
+        {
+            Debug.LogWarning("⚠️ No se encontró Oficina de Correos para notificar cierre del menú");
+        }
     }
 
     private void UpdateMissionMenuDisplay()
@@ -159,31 +197,38 @@ public class UIManager : MonoBehaviour
         if (gameManager == null || !gameManager.IsReady())
         {
             SetMissionDisplayText("Oficina de Correos", "Sistema no disponible", "Vuelve más tarde", "");
+            Debug.LogWarning("⚠️ GameManager no disponible para mostrar misiones");
             return;
         }
 
-        // Listar misiones disponibles
+        // Listar todas las misiones disponibles
         if (gameManager.availableMissions.Count > 0)
         {
+            Debug.Log($"📋 Mostrando {gameManager.availableMissions.Count} misiones disponibles");
+
             foreach (Mission mission in gameManager.availableMissions)
             {
                 CreateMissionButton(mission);
             }
+
+            // Seleccionar la primera misión por defecto
             SelectMission(gameManager.availableMissions[0]);
         }
         else
         {
-            SetMissionDisplayText("Oficina de Correos",
-                "No hay misiones disponibles en este momento",
-                "Vuelve más tarde para nuevas entregas",
-                "");
+            SetMissionDisplayText("Oficina de Correos", "No hay misiones disponibles", "Vuelve más tarde para nuevas entregas", "");
             acceptMissionButton.interactable = false;
+            Debug.Log("📭 No hay misiones disponibles para mostrar");
         }
     }
 
     private void CreateMissionButton(Mission mission)
     {
-        if (missionButtonPrefab == null || missionsContainer == null) return;
+        if (missionButtonPrefab == null || missionsContainer == null)
+        {
+            Debug.LogError("❌ missionButtonPrefab o missionsContainer no asignados");
+            return;
+        }
 
         GameObject missionButtonObj = Instantiate(missionButtonPrefab, missionsContainer);
         Button missionButton = missionButtonObj.GetComponent<Button>();
@@ -198,6 +243,8 @@ public class UIManager : MonoBehaviour
         {
             missionButton.onClick.AddListener(() => SelectMission(mission));
         }
+
+        Debug.Log($"✅ Botón de misión creado: {mission.missionName}");
     }
 
     private void ClearMissionButtons()
@@ -208,6 +255,8 @@ public class UIManager : MonoBehaviour
         {
             Destroy(child.gameObject);
         }
+
+        Debug.Log("🧹 Botones de misiones limpiados");
     }
 
     private void SelectMission(Mission mission)
@@ -223,7 +272,10 @@ public class UIManager : MonoBehaviour
                 $"Entregar a: {mission.targetNPCName}"
             );
 
-            acceptMissionButton.interactable = GameManager.Instance.CanAcceptMission(mission);
+            bool canAccept = GameManager.Instance.CanAcceptMission(mission);
+            acceptMissionButton.interactable = canAccept;
+
+            Debug.Log($"🎯 Misión seleccionada: {mission.missionName} - Puede aceptar: {canAccept}");
         }
     }
 
@@ -239,9 +291,14 @@ public class UIManager : MonoBehaviour
     {
         if (selectedMission != null && GameManager.Instance != null)
         {
+            Debug.Log($"✅ Aceptando misión: {selectedMission.missionName}");
             GameManager.Instance.AcceptMission(selectedMission);
             CloseMissionMenu();
             UpdateHUD();
+        }
+        else
+        {
+            Debug.LogError("❌ No se puede aceptar misión - selectedMission o GameManager es null");
         }
     }
     #endregion
@@ -256,6 +313,7 @@ public class UIManager : MonoBehaviour
         isPauseMenuOpen = true;
 
         GameManager.Instance.ChangeGameState(GameState.Paused);
+        Debug.Log("⏸ Menú de pausa abierto");
     }
 
     public void ClosePauseMenu()
@@ -267,6 +325,7 @@ public class UIManager : MonoBehaviour
         isPauseMenuOpen = false;
 
         GameManager.Instance.ChangeGameState(GameState.Exploring);
+        Debug.Log("⏸ Menú de pausa cerrado");
     }
 
     private void TogglePauseMenu()
@@ -290,7 +349,7 @@ public class UIManager : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else
-        Application.Quit();
+            Application.Quit();
 #endif
     }
     #endregion
@@ -330,14 +389,35 @@ public class UIManager : MonoBehaviour
         UpdateHUD();
 
         yield return new WaitForSeconds(2f);
-        // Ocultar el popup
+        // Ocultar el popup (implementar si tienes un popup visual)
+    }
+    #endregion
+
+    #region Public Methods para otros sistemas
+    public bool IsMissionMenuOpen()
+    {
+        return isMissionMenuOpen;
+    }
+
+    public bool IsPauseMenuOpen()
+    {
+        return isPauseMenuOpen;
+    }
+
+    public void ForceCloseAllMenus()
+    {
+        CloseMissionMenu();
+        ClosePauseMenu();
+        Debug.Log("🔄 Todos los menús forzados a cerrar");
     }
     #endregion
 
     private void OnDestroy()
     {
-        missionMenuAction?.Dispose();
+        // ✅ SOLO dispose de pause action - ELIMINADO missionMenuAction
         pauseMenuAction?.Dispose();
+
+        Debug.Log("♻️ UIManager destruido - Recursos liberados");
     }
 
     public bool IsReady()
