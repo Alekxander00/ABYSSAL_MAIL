@@ -127,7 +127,7 @@ public class UIManager : MonoBehaviour
         GameManager.Instance.ChangeGameState(GameState.InMenu);
         UpdateMissionMenuDisplay();
 
-        Debug.Log("🏣 Oficina de correos abierta");
+        Debug.Log("🏣 Oficina de correos - Menú de misiones abierto");
     }
 
     public void CloseMissionMenu()
@@ -139,9 +139,9 @@ public class UIManager : MonoBehaviour
         isMissionMenuOpen = false;
 
         GameManager.Instance.ChangeGameState(GameState.Exploring);
-
-        Debug.Log("🏣 Oficina de correos cerrada");
+        Debug.Log("🏣 Oficina de correos - Menú de misiones cerrado");
     }
+
 
     private void ToggleMissionMenu()
     {
@@ -158,24 +158,25 @@ public class UIManager : MonoBehaviour
         GameManager gameManager = GameManager.Instance;
         if (gameManager == null || !gameManager.IsReady())
         {
-            SetMissionDisplayText("Oficina de Correos", "No hay misiones disponibles", "Vuelve más tarde", "");
+            SetMissionDisplayText("Oficina de Correos", "Sistema no disponible", "Vuelve más tarde", "");
             return;
         }
 
-        // Listar todas las misiones disponibles
+        // Listar misiones disponibles
         if (gameManager.availableMissions.Count > 0)
         {
             foreach (Mission mission in gameManager.availableMissions)
             {
                 CreateMissionButton(mission);
             }
-
-            // Seleccionar la primera misión por defecto
             SelectMission(gameManager.availableMissions[0]);
         }
         else
         {
-            SetMissionDisplayText("Oficina de Correos", "No hay misiones disponibles", "Vuelve más tarde para nuevas entregas", "");
+            SetMissionDisplayText("Oficina de Correos",
+                "No hay misiones disponibles en este momento",
+                "Vuelve más tarde para nuevas entregas",
+                "");
             acceptMissionButton.interactable = false;
         }
     }
