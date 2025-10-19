@@ -580,10 +580,10 @@ MonoBehaviour:
   missionTitleText: {fileID: 985650666}
   missionDescriptionText: {fileID: 115632675}
   missionRewardText: {fileID: 1322360487}
-  missionNPCText: {fileID: 0}
+  missionNPCText: {fileID: 823171055}
   acceptMissionButton: {fileID: 1588323179}
   closeMissionButton: {fileID: 872374352}
-  missionButtonPrefab: {fileID: 0}
+  missionButtonPrefab: {fileID: 47947806}
   resumeButton: {fileID: 301787135}
   quitButton: {fileID: 161964026}
   healthText: {fileID: 0}
@@ -708,7 +708,7 @@ Animator:
   m_GameObject: {fileID: 743742973}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 584ea2ef69322d4469b3680e3a542475, type: 2}
+  m_Controller: {fileID: 9100000, guid: dbc8d2bd3898c9541af89ca200e2593a, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -1326,7 +1326,8 @@ PrefabInstance:
       propertyPath: m_Offset.y
       value: -0.040235113
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6297491030899510540, guid: 253823e3109da824aa6bd85f3048eda9, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
