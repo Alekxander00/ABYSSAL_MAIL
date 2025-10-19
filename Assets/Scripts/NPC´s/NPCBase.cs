@@ -29,6 +29,25 @@ public class NPCBase : Interactable
     private bool isProcessing = false;
     private Coroutine currentDialogueCoroutine;
 
+    // ✅ NUEVO: Asegurar que el globo esté desactivado al inicio
+    void Start()
+    {
+        ForceHideDialogueAtStart();
+    }
+
+    private void ForceHideDialogueAtStart()
+    {
+        if (dialogueBubble != null)
+        {
+            dialogueBubble.SetActive(false);
+            if (enableDebug) Debug.Log($"🔧 {npcName}: Globo desactivado al inicio");
+        }
+        else if (enableDebug)
+        {
+            Debug.LogWarning($"⚠️ {npcName}: dialogueBubble no asignado en Inspector");
+        }
+    }
+
     public override void Interact(GameObject player)
     {
         if (!CanInteract() || isProcessing)
@@ -41,7 +60,7 @@ public class NPCBase : Interactable
 
         isProcessing = true;
 
-        // ✅ CORRECCIÓN: Ocultar diálogo anterior antes de mostrar uno nuevo
+        // Ocultar diálogo anterior antes de mostrar uno nuevo
         HideDialogueBubble();
 
         FindMyMission();
@@ -167,7 +186,6 @@ public class NPCBase : Interactable
         }
     }
 
-    // ✅ CORRECCIÓN CRÍTICA: Sistema de diálogos mejorado
     private void ShowDialogueBubble(string text)
     {
         if (dialogueBubble == null || dialogueText == null)
@@ -198,7 +216,6 @@ public class NPCBase : Interactable
         HideDialogueBubble();
     }
 
-    // ✅ NUEVO: Método público para ocultar diálogo desde otros scripts
     public void HideDialogueBubble()
     {
         if (dialogueBubble != null)
@@ -227,7 +244,7 @@ public class NPCBase : Interactable
         return true;
     }
 
-    // ✅ NUEVO: Para debug en tiempo real
+    // Para debug en tiempo real
     private void Update()
     {
         // Ocultar diálogo si el jugador se aleja (opcional)
